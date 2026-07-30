@@ -5,13 +5,16 @@ import {
   DocumentIcon,
   DownloadIcon,
   ResetIcon,
+  UndoIcon,
 } from './icons'
 
 interface ExportActionBarProps {
   onCopyAll: () => void
   onDownloadText: () => void
   onDownloadDocx: () => void
+  onRevertAll: () => void
   onReset: () => void
+  hasEdits: boolean
   isCopied: boolean
   isExporting: boolean
 }
@@ -20,7 +23,9 @@ export function ExportActionBar({
   onCopyAll,
   onDownloadText,
   onDownloadDocx,
+  onRevertAll,
   onReset,
+  hasEdits,
   isCopied,
   isExporting,
 }: ExportActionBarProps) {
@@ -64,6 +69,16 @@ export function ExportActionBar({
             ? 'Wordファイルを作成中…'
             : 'Word（.docx）で保存'}
         </Button>
+        {hasEdits && (
+          <Button
+            isDisabled={isExporting}
+            variant="outline"
+            onPress={onRevertAll}
+          >
+            <UndoIcon className="size-4" />
+            すべての編集を元に戻す
+          </Button>
+        )}
         <Button
           className="sm:ml-auto"
           isDisabled={isExporting}

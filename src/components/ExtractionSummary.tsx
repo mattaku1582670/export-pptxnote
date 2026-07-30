@@ -1,18 +1,30 @@
-import { Card } from '@heroui/react'
-import type { ExtractionResult } from '../types'
+import { Button, Card } from '@heroui/react'
+import {
+  slideNumbersWithoutNotes,
+  type ExtractionResult,
+} from '../types'
 import { DocumentIcon } from './icons'
 
 interface ExtractionSummaryProps {
   result: ExtractionResult
+  onShowWithoutNotes: () => void
 }
 
-export function ExtractionSummary({ result }: ExtractionSummaryProps) {
+const MAX_VISIBLE_SLIDE_NUMBERS = 20
+
+export function ExtractionSummary({
+  result,
+  onShowWithoutNotes,
+}: ExtractionSummaryProps) {
   const summaryItems = [
     ['元のファイル名', result.fileName],
     ['総スライド数', `${result.slideCount} 枚`],
     ['ノートあり', `${result.slidesWithNotes} 枚`],
     ['ノートなし', `${result.slidesWithoutNotes} 枚`],
   ]
+  const withoutNotes = slideNumbersWithoutNotes(result)
+  const visibleNumbers = withoutNotes.slice(0, MAX_VISIBLE_SLIDE_NUMBERS)
+  const remainingCount = withoutNotes.length - visibleNumbers.length
 
   return (
     <Card>
@@ -41,6 +53,23 @@ export function ExtractionSummary({ result }: ExtractionSummaryProps) {
             </div>
           ))}
         </dl>
+        {withoutNotes.length > 0 && (
+          <div className="mt-4 flex flex-col gap-3 rounded-xl bg-content2 px-4 py-3 sm:flex-row sm:items-center sm:justify-between">
+            <p className="text-sm text-foreground-700">
+              <span className="font-medium">ノートなしのスライド:</span>{' '}
+              {visibleNumbers.join(', ')}
+              {remainingCount > 0 && `、ほか ${remainingCount} 件`}
+            </p>
+            <Button
+              className="shrink-0"
+              size="sm"
+              variant="outline"
+              onPress={onShowWithoutNotes}
+            >
+              ノートなしのみ表示
+            </Button>
+          </div>
+        )}
       </Card.Content>
     </Card>
   )

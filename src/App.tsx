@@ -20,7 +20,10 @@ import { extractNotes, isLargeFile } from './services/pptxParser'
 import { buildPlainText, buildSlideHeading } from './services/textExporter'
 import {
   DEFAULT_EXPORT_OPTIONS,
+  filterSlides,
+  hasAnyEdits,
   PptxError,
+  revertAllSlides,
   withRecalculatedCounts,
   type AppStatus,
   type ExportOptions,
@@ -56,7 +59,10 @@ function App() {
   const [copiedKey, setCopiedKey] = useState<string | null>(null)
   const [manualCopyText, setManualCopyText] = useState<string | null>(null)
   const [isResetConfirmOpen, setIsResetConfirmOpen] = useState(false)
+  const [isRevertAllConfirmOpen, setIsRevertAllConfirmOpen] =
+    useState(false)
   const copyTimerRef = useRef<number | null>(null)
+  const hasEdits = result !== null && hasAnyEdits(result)
 
   useEffect(() => {
     document.documentElement.classList.toggle('dark', isDark)
@@ -72,23 +78,24 @@ function App() {
     [],
   )
 
+  useEffect(() => {
+    if (!hasEdits) return
+
+    const handleBeforeUnload = (event: BeforeUnloadEvent) => {
+      event.preventDefault()
+      event.returnValue = ''
+    }
+
+    // file:// ではブラウザによって確認が出ない場合もあるため、補助的な安全策として扱う。
+    window.addEventListener('beforeunload', handleBeforeUnload)
+    return () => {
+      window.removeEventListener('beforeunload', handleBeforeUnload)
+    }
+  }, [hasEdits])
+
   const visibleSlides = useMemo(() => {
     if (result === null) return []
-    const query = searchQuery.trim().toLocaleLowerCase()
-
-    return result.slides.filter((slide) => {
-      const matchesFilter =
-        filter === 'all' ||
-        (filter === 'withNotes' && slide.hasNotes) ||
-        (filter === 'withoutNotes' && !slide.hasNotes)
-      const matchesSearch =
-        query.length === 0 ||
-        String(slide.slideNumber).includes(query) ||
-        slide.title.toLocaleLowerCase().includes(query) ||
-        slide.editedNotes.toLocaleLowerCase().includes(query)
-
-      return matchesFilter && matchesSearch
-    })
+    return filterSlides(result.slides, filter, searchQuery)
   }, [filter, result, searchQuery])
 
   const showCopied = (key: string) => {
@@ -225,6 +232,17 @@ function App() {
     }
   }
 
+  const handleRevertAll = () => {
+    setIsRevertAllConfirmOpen(true)
+  }
+
+  const confirmRevertAll = () => {
+    setResult((currentResult) =>
+      currentResult === null ? null : revertAllSlides(currentResult),
+    )
+    setIsRevertAllConfirmOpen(false)
+  }
+
   const resetApplication = () => {
     if (copyTimerRef.current !== null) {
       window.clearTimeout(copyTimerRef.current)
@@ -241,13 +259,10 @@ function App() {
     setCopiedKey(null)
     setManualCopyText(null)
     setIsResetConfirmOpen(false)
+    setIsRevertAllConfirmOpen(false)
   }
 
   const handleReset = () => {
-    const hasEdits =
-      result?.slides.some(
-        (slide) => slide.editedNotes !== slide.originalNotes,
-      ) ?? false
     if (hasEdits) {
       setIsResetConfirmOpen(true)
       return
@@ -295,7 +310,10 @@ function App() {
 
           {result !== null && (
             <>
-              <ExtractionSummary result={result} />
+              <ExtractionSummary
+                result={result}
+                onShowWithoutNotes={() => setFilter('withoutNotes')}
+              />
               {status === 'exporting' && (
                 <ProcessingStatus progress={progress} status={status} />
               )}
@@ -305,11 +323,13 @@ function App() {
                 onChange={setExportOptions}
               />
               <ExportActionBar
+                hasEdits={hasEdits}
                 isCopied={copiedKey === 'all'}
                 isExporting={status === 'exporting'}
                 onCopyAll={handleCopyAll}
                 onDownloadDocx={() => void handleDownloadDocx()}
                 onDownloadText={handleDownloadText}
+                onRevertAll={handleRevertAll}
                 onReset={handleReset}
               />
               <SlideFilterBar
@@ -332,7 +352,9 @@ function App() {
                 </h2>
                 {visibleSlides.length === 0 ? (
                   <div className="rounded-2xl border border-dashed border-default-300 bg-content1 px-6 py-12 text-center text-foreground-600">
-                    条件に一致するスライドがありません。
+                    {filter === 'edited'
+                      ? 'まだ編集したスライドはありません。'
+                      : '条件に一致するスライドがありません。'}
                   </div>
                 ) : (
                   visibleSlides.map((slide) => (
@@ -393,6 +415,40 @@ function App() {
           </Modal.Container>
         </Modal.Backdrop>
       </Modal>
+
+      <AlertDialog
+        isOpen={isRevertAllConfirmOpen}
+        onOpenChange={setIsRevertAllConfirmOpen}
+      >
+        <AlertDialog.Backdrop>
+          <AlertDialog.Container placement="center" size="md">
+            <AlertDialog.Dialog>
+              <AlertDialog.Header>
+                <AlertDialog.Icon status="warning">
+                  <WarningIcon className="size-6" />
+                </AlertDialog.Icon>
+                <AlertDialog.Heading>
+                  すべての編集を元に戻しますか？
+                </AlertDialog.Heading>
+              </AlertDialog.Header>
+              <AlertDialog.Body>
+                編集した発表者ノートは抽出直後の内容に戻ります。この操作は取り消せません。
+              </AlertDialog.Body>
+              <AlertDialog.Footer>
+                <Button
+                  variant="outline"
+                  onPress={() => setIsRevertAllConfirmOpen(false)}
+                >
+                  キャンセル
+                </Button>
+                <Button variant="danger" onPress={confirmRevertAll}>
+                  すべて元に戻す
+                </Button>
+              </AlertDialog.Footer>
+            </AlertDialog.Dialog>
+          </AlertDialog.Container>
+        </AlertDialog.Backdrop>
+      </AlertDialog>
 
       <AlertDialog
         isOpen={isResetConfirmOpen}

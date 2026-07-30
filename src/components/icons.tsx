@@ -100,3 +100,12 @@ export function UndoIcon({ className }: IconProps) {
     </svg>
   )
 }
+
+export function PencilIcon({ className }: IconProps) {
+  return (
+    <svg className={className} {...sharedProps}>
+      <path d="m14.5 5.5 4 4M4 20l4.5-1 10-10a2.8 2.8 0 0 0-4-4l-10 10L4 20Z" />
+      <path d="m12.5 7.5 4 4" />
+    </svg>
+  )
+}

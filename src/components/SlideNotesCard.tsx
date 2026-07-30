@@ -1,8 +1,9 @@
 import { Alert, Button, Card, Chip, TextArea } from '@heroui/react'
-import type { ExtractedSlide } from '../types'
+import { slideIsEdited, type ExtractedSlide } from '../types'
 import {
   CheckIcon,
   CopyIcon,
+  PencilIcon,
   UndoIcon,
   WarningIcon,
 } from './icons'
@@ -23,7 +24,7 @@ export function SlideNotesCard({
   onCopy,
   isCopied,
 }: SlideNotesCardProps) {
-  const isEdited = slide.editedNotes !== slide.originalNotes
+  const isEdited = slideIsEdited(slide)
   const heading =
     slide.title.length > 0
       ? `スライド ${slide.slideNumber}：${slide.title}`
@@ -38,22 +39,32 @@ export function SlideNotesCard({
             {countCharacters(slide.editedNotes)}文字
           </Card.Description>
         </div>
-        <Chip
-          color={slide.hasNotes ? 'success' : 'default'}
-          size="sm"
-          variant="soft"
-        >
-          <span className="inline-flex items-center gap-1.5">
-            {slide.hasNotes ? (
-              <CheckIcon className="size-4" />
-            ) : (
-              <WarningIcon className="size-4" />
-            )}
-            <Chip.Label>
-              {slide.hasNotes ? 'ノートあり' : 'ノートなし'}
-            </Chip.Label>
-          </span>
-        </Chip>
+        <div className="flex flex-wrap items-center gap-2">
+          <Chip
+            color={slide.hasNotes ? 'success' : 'default'}
+            size="sm"
+            variant="soft"
+          >
+            <span className="inline-flex items-center gap-1.5">
+              {slide.hasNotes ? (
+                <CheckIcon className="size-4" />
+              ) : (
+                <WarningIcon className="size-4" />
+              )}
+              <Chip.Label>
+                {slide.hasNotes ? 'ノートあり' : 'ノートなし'}
+              </Chip.Label>
+            </span>
+          </Chip>
+          {isEdited && (
+            <Chip color="accent" size="sm" variant="soft">
+              <span className="inline-flex items-center gap-1.5">
+                <PencilIcon className="size-4" />
+                <Chip.Label>変更あり</Chip.Label>
+              </span>
+            </Chip>
+          )}
+        </div>
       </Card.Header>
       <Card.Content className="flex flex-col gap-4">
         {slide.parseError !== undefined && (

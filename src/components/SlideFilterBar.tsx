@@ -14,6 +14,7 @@ const filters: { value: SlideFilter; label: string }[] = [
   { value: 'all', label: 'すべてのスライド' },
   { value: 'withNotes', label: 'ノートありのみ' },
   { value: 'withoutNotes', label: 'ノートなしのみ' },
+  { value: 'edited', label: '編集したもののみ' },
 ]
 
 export function SlideFilterBar({
@@ -31,7 +32,7 @@ export function SlideFilterBar({
     >
       <div className="flex flex-col gap-4">
         <div
-          aria-label="ノートの有無で絞り込む"
+          aria-label="表示条件で絞り込む"
           className="flex flex-wrap gap-2"
           role="group"
         >

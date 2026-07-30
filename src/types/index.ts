@@ -17,9 +17,26 @@ export interface ExtractionResult {
   slides: ExtractedSlide[]
 }
 
+/** 表示フィルター */
+export type SlideFilter =
+  | 'all'
+  | 'withNotes'
+  | 'withoutNotes'
+  | 'edited'
+
 /** ノートが実質的に存在するか。編集後の内容から都度判定する */
 export function slideHasNotes(slide: ExtractedSlide): boolean {
   return slide.editedNotes.trim().length > 0
+}
+
+/** そのスライドが編集されているか */
+export function slideIsEdited(slide: ExtractedSlide): boolean {
+  return slide.editedNotes !== slide.originalNotes
+}
+
+/** 1枚でも編集されているか */
+export function hasAnyEdits(result: ExtractionResult): boolean {
+  return result.slides.some(slideIsEdited)
 }
 
 /** slides から集計値を再計算し、整合した ExtractionResult を返す */
@@ -39,6 +56,53 @@ export function withRecalculatedCounts(
     slidesWithoutNotes: slides.length - slidesWithNotes,
     slides,
   }
+}
+
+/** 全スライドの編集内容を抽出直後の状態に戻す */
+export function revertAllSlides(
+  result: ExtractionResult,
+): ExtractionResult {
+  return withRecalculatedCounts({
+    ...result,
+    slides: result.slides.map((slide) => ({
+      ...slide,
+      editedNotes: slide.originalNotes,
+    })),
+  })
+}
+
+/** 表示条件と検索語に一致するスライドを返す */
+export function filterSlides(
+  slides: ExtractedSlide[],
+  filter: SlideFilter,
+  searchQuery: string,
+): ExtractedSlide[] {
+  const query = searchQuery.trim().toLocaleLowerCase()
+
+  return slides.filter((slide) => {
+    const matchesFilter =
+      filter === 'all' ||
+      (filter === 'withNotes' && slide.hasNotes) ||
+      (filter === 'withoutNotes' && !slide.hasNotes) ||
+      (filter === 'edited' && slideIsEdited(slide))
+    const matchesSearch =
+      query.length === 0 ||
+      String(slide.slideNumber).includes(query) ||
+      slide.title.toLocaleLowerCase().includes(query) ||
+      slide.editedNotes.toLocaleLowerCase().includes(query)
+
+    return matchesFilter && matchesSearch
+  })
+}
+
+/** ノートがないスライド番号を昇順で返す */
+export function slideNumbersWithoutNotes(
+  result: ExtractionResult,
+): number[] {
+  return result.slides
+    .filter((slide) => !slide.hasNotes)
+    .map((slide) => slide.slideNumber)
+    .sort((first, second) => first - second)
 }
 
 export interface ExportOptions {
@@ -67,9 +131,6 @@ export interface ParseProgress {
   /** 画面にそのまま出せる日本語メッセージ */
   message: string
 }
-
-/** 表示フィルター */
-export type SlideFilter = 'all' | 'withNotes' | 'withoutNotes'
 
 /** アプリの処理状態 */
 export type AppStatus =
