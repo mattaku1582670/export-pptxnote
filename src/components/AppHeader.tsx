@@ -1,4 +1,4 @@
-import { Button, Chip } from '@heroui/react'
+import { Button } from '@heroui/react'
 import { MoonIcon, SunIcon } from './icons'
 
 interface AppHeaderProps {
@@ -13,15 +13,9 @@ export function AppHeader({ isDark, onThemeToggle }: AppHeaderProps) {
         <h1 className="text-2xl font-bold tracking-tight text-foreground sm:text-3xl">
           PowerPoint 発表者ノート抽出
         </h1>
-        <Chip
-          className="mt-4 h-auto max-w-full whitespace-normal py-2"
-          color="success"
-          variant="soft"
-        >
-          <Chip.Label>
-            すべての処理はこのブラウザ内で行われます。
-          </Chip.Label>
-        </Chip>
+        <p className="mt-3 max-w-2xl text-sm text-foreground-600 sm:text-base">
+          pptxファイルから各スライドの発表者ノートを抽出し、編集して Word・テキストとして書き出せます。
+        </p>
       </div>
       <Button
         aria-label={
