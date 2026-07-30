@@ -28,31 +28,38 @@ export function ExtractionSummary({
 
   return (
     <Card>
-      <Card.Header className="flex items-center gap-3">
-        <div className="rounded-lg bg-accent/10 p-2 text-accent">
-          <DocumentIcon className="size-5" />
-        </div>
-        <Card.Title>抽出結果</Card.Title>
-      </Card.Header>
       <Card.Content>
-        <dl className="grid gap-4 sm:grid-cols-2 lg:grid-cols-4">
-          {summaryItems.map(([term, description]) => (
-            <div
-              key={term}
-              className="min-w-0 rounded-xl bg-content2 px-4 py-3"
-            >
-              <dt className="text-xs font-medium text-foreground-500">
-                {term}
-              </dt>
-              <dd
-                className="mt-1 truncate font-semibold"
-                title={description}
-              >
-                {description}
-              </dd>
+        {/*
+         * 左に見出し、右に 2x2 の集計を置く。ファイル名が長くなりうるため、
+         * 右側の幅を左側の 3 倍確保している（minmax(0,...) は grid の子が
+         * 最小コンテンツ幅で押し広げられて truncate が効かなくなるのを防ぐため）。
+         */}
+        <div className="grid items-center gap-4 sm:grid-cols-[minmax(0,1fr)_minmax(0,3fr)]">
+          <div className="flex items-center gap-3">
+            <div className="rounded-lg bg-accent/10 p-2 text-accent">
+              <DocumentIcon className="size-5" />
             </div>
-          ))}
-        </dl>
+            <Card.Title>抽出結果</Card.Title>
+          </div>
+          <dl className="grid gap-3 sm:grid-cols-2">
+            {summaryItems.map(([term, description]) => (
+              <div
+                key={term}
+                className="min-w-0 rounded-xl bg-content2 px-4 py-3"
+              >
+                <dt className="text-xs font-medium text-foreground-500">
+                  {term}
+                </dt>
+                <dd
+                  className="mt-1 truncate font-semibold"
+                  title={description}
+                >
+                  {description}
+                </dd>
+              </div>
+            ))}
+          </dl>
+        </div>
         {withoutNotes.length > 0 && (
           <div className="mt-4 flex flex-col gap-3 rounded-xl bg-content2 px-4 py-3 sm:flex-row sm:items-center sm:justify-between">
             <p className="text-sm text-foreground-700">
