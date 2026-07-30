@@ -1,0 +1,12 @@
+@import "@heroui/react/styles";
+
+@layer base {
+  :root {
+    --app-font-sans: system-ui, -apple-system, "Segoe UI", "Yu Gothic UI",
+      "Hiragino Sans", "Noto Sans JP", Meiryo, sans-serif;
+  }
+
+  body {
+    font-family: var(--app-font-sans);
+  }
+}
